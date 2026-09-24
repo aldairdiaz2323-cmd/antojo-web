@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ANTOJO · Tu antojo, tu combinación</title>
+<meta name="description" content="Galleta + helado como tú quieras. Arma tu combinación y pídela por WhatsApp.">
+<script>document.documentElement.classList.add('js');</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FFF3E0;
+    --ink: #3B2116;
+    --muted: #7A5B49;
+    --panel: #FFE4BD;
+    --line: #E6C99B;
+    --orange: #FF7A1A;
+    --choc: #2E1A11;
+    --cream: #FFF1DC;
+    --ease: cubic-bezier(.2,.8,.2,1);
+    --display: "Bagel Fat One", "Arial Rounded MT Bold", "Trebuchet MS", system-ui, sans-serif;
+    --body: "Figtree", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    box-sizing: border-box;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #241209; --ink: #FFF1DC; --muted: #D3B89C; --panel: #361F13; --line: #5A3A2A;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #241209; --ink: #FFF1DC; --muted: #D3B89C; --panel: #361F13; --line: #5A3A2A;
+  }
+  *, *::before, *::after { box-sizing: inherit; }
+  html { height: auto; scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 64px); }
+  @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: var(--body); font-size: 1.05rem; line-height: 1.6;
+    -webkit-font-smoothing: antialiased; overflow-x: hidden;
+  }
+  img, svg { max-width: 100%; }
+  a { color: inherit; }
+  :focus-visible { outline: 3px solid var(--orange); outline-offset: 3px; }
+  .wrap { width: min(1080px, 100% - 40px); margin-inline: auto; position: relative; z-index: 1; }
+
+  /* ---------- Barra de progreso y barra fija ---------- */
+  .progress {
+    position: fixed; top: 0; left: 0; right: 0; height: 4px; z-index: 80;
+    background: var(--orange); transform-origin: 0 50%; transform: scaleX(0);
+  }
+  .bar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 70;
+    background: rgba(46,26,17,.92); color: var(--cream);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    padding: calc(env(safe-area-inset-top, 0px) + 10px) 0 10px;
+    transform: translateY(-100%); visibility: hidden;
+    transition: transform .45s var(--ease), visibility 0s .45s;
+  }
+  .bar.show { transform: none; visibility: visible; transition: transform .45s var(--ease), visibility 0s 0s; }
+  .bar-in { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .bar .wordmark { font-size: 1.5rem; }
+  .bar .btn { padding: .65em 1.1em; font-size: .9rem; }
+
+  /* ---------- Wordmark ---------- */
+  .wordmark { font-family: var(--display); letter-spacing: .01em; line-height: 1; white-space: nowrap; }
+  .wordmark svg { width: .8em; height: .8em; vertical-align: -.03em; margin-left: .02em; transition: transform .7s var(--ease); }
+  .wordmark:hover svg { transform: rotate(360deg); }
+  .topbar .wordmark svg { animation: spinOnce 1.5s cubic-bezier(.3,1.4,.5,1) .5s both; }
+
+  /* ---------- Botones ---------- */
+  .btn {
+    position: relative;
+    display: inline-flex; align-items: center; justify-content: center; gap: .55em;
+    font: 700 1rem/1 var(--body);
+    padding: .95em 1.5em; border-radius: 999px; border: 2px solid transparent;
+    text-decoration: none; cursor: pointer;
+    transition: transform .2s var(--ease), background-color .2s ease, box-shadow .2s ease;
+  }
+  .btn:hover { transform: translateY(-3px); box-shadow: 0 10px 18px -8px rgba(0,0,0,.45); }
+  .btn:active { transform: translateY(0) scale(.97); box-shadow: none; }
+  .btn-orange { background: var(--orange); color: #3B2116; }
+  .btn-orange:hover { background: #FF8E3A; }
+  .btn-line { border-color: currentColor; background: transparent; }
+  .btn-line:hover { background: rgba(255,255,255,.1); }
+  .btn svg { width: 1.15em; height: 1.15em; flex: none; }
+  .pulse::after {
+    content: ""; position: absolute; inset: -2px; border-radius: inherit;
+    border: 2px solid var(--orange); pointer-events: none;
+    animation: ring 2.4s ease-out 1.5s infinite;
+  }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    position: relative; background: var(--choc); color: var(--cream);
+    padding: calc(env(safe-area-inset-top, 0px) + 20px) 0 72px; overflow: hidden;
+  }
+  .sprinkles { position: absolute; inset: 0; pointer-events: none; }
+  .sprinkles i {
+    position: absolute; display: block; border-radius: 3px; opacity: .55;
+    transform: rotate(var(--r));
+    animation: drift var(--t) ease-in-out var(--dl) infinite;
+  }
+  .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; animation: fadeDown .7s var(--ease) both; }
+  .topbar .wordmark { font-size: 1.9rem; }
+  .topbar .btn { padding: .7em 1.1em; font-size: .92rem; }
+  .hero-grid { display: grid; gap: 28px; align-items: center; margin-top: 40px; }
+  .hero h1 {
+    font-family: var(--display); font-weight: 400;
+    font-size: clamp(2.8rem, 9.5vw, 5.8rem); line-height: .98; margin: 0 0 20px;
+  }
+  .ln { display: block; overflow: hidden; padding: .1em 0 .12em; margin: -.1em 0 -.12em; }
+  .ln > span { display: block; animation: rise .95s var(--ease) both; }
+  .ln:nth-child(2) > span { animation-delay: .14s; }
+  .ln:nth-child(2) > span em { font-style: normal; color: var(--orange); }
+  .hero p.lead { font-size: 1.2rem; max-width: 34ch; margin: 0 0 30px; color: #F0D9BC; animation: fadeUp .8s var(--ease) .45s both; }
+  .hero-cta { display: flex; flex-wrap: wrap; gap: 12px; animation: fadeUp .8s var(--ease) .6s both; }
+  .hero-art {
+    justify-self: center; width: min(360px, 82%);
+    transform: translate3d(var(--px, 0px), calc(var(--py, 0px) + var(--sy, 0px)), 0);
+    transition: transform .2s ease-out;
+  }
+  .float { animation: float 5.5s ease-in-out 2s infinite; }
+  .hero-art svg { width: 100%; height: auto; display: block; filter: drop-shadow(0 18px 24px rgba(0,0,0,.35)); }
+  @media (min-width: 860px) {
+    .hero-grid { grid-template-columns: 1.15fr .85fr; gap: 48px; margin-top: 56px; }
+    .hero-art { width: 100%; max-width: 400px; }
+  }
+
+  /* ---------- Marquesina ---------- */
+  .marquee {
+    background: var(--orange); color: #3B2116; overflow: hidden; white-space: nowrap;
+    padding: 14px 0; font-family: var(--display); font-size: clamp(1.3rem, 3vw, 2rem);
+  }
+  .track { display: inline-flex; animation: scroll 26s linear infinite; will-change: transform; }
+  .marquee:hover .track { animation-play-state: paused; }
+  .track > span { display: inline-flex; align-items: center; gap: 28px; padding-right: 28px; }
+  .track svg { width: 1.05em; height: 1.05em; flex: none; }
+
+  /* ---------- Secciones ---------- */
+  section { padding: 72px 0; }
+  h2 { font-family: var(--display); font-weight: 400; font-size: clamp(2rem, 5vw, 3.2rem); line-height: 1.05; margin: 0 0 8px; }
+  .squig { display: block; width: 120px; height: 12px; margin: 0 0 16px; overflow: visible; }
+  .squig path { fill: none; stroke: var(--orange); stroke-width: 3.5; stroke-linecap: round; }
+  .quotes .squig path { stroke: #3B2116; }
+  .js .squig path { stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset .9s var(--ease) .35s; }
+  h2.in + .squig path { stroke-dashoffset: 0; }
+  .sub { color: var(--muted); max-width: 52ch; margin: 0 0 36px; }
+
+  /* ---------- Revelar al hacer scroll ---------- */
+  .js .reveal { opacity: 0; transform: translateY(28px); transition: opacity .8s var(--ease), transform .8s var(--ease); transition-delay: var(--d, 0s); }
+  .js .reveal.from-left { transform: translateX(-42px); }
+  .js .reveal.pop { transform: scale(.82) translateY(18px); }
+  .js .reveal.in { opacity: 1; transform: none; }
+
+  /* ---------- Armador ---------- */
+  .builder { background: var(--panel); border-radius: 32px; padding: 28px; display: grid; gap: 28px; }
+  .builder-art { display: grid; place-items: center; padding: 8px 0; }
+  .treat { width: min(300px, 80%); }
+  .treat svg { width: 100%; height: auto; display: block; filter: drop-shadow(0 6px 8px rgba(59,33,22,.28)); overflow: visible; }
+  fieldset { border: 0; padding: 0; margin: 0 0 22px; min-width: 0; }
+  legend { font-weight: 700; font-size: 1.05rem; margin-bottom: 10px; padding: 0; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { position: relative; }
+  .chip input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+  .chip span {
+    display: inline-flex; align-items: center; gap: 8px; padding: .6em 1em; border-radius: 999px;
+    background: var(--bg); border: 2px solid var(--line); font-weight: 600; font-size: .96rem; line-height: 1.2;
+    transition: background-color .2s ease, border-color .2s ease, transform .25s cubic-bezier(.3,1.6,.5,1), color .2s ease;
+  }
+  .chip:hover span { transform: translateY(-2px) scale(1.04); border-color: var(--ink); }
+  .chip i { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid rgba(0,0,0,.25); flex: none; }
+  .chip input:checked + span { background: var(--ink); color: var(--bg); border-color: var(--ink); transform: scale(1.04); }
+  .chip input:focus-visible + span { outline: 3px solid var(--orange); outline-offset: 2px; }
+  .total { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 6px 0 16px; }
+  .summary { margin: 0; font-weight: 600; max-width: 34ch; }
+  .price { font-family: var(--display); font-size: 3rem; line-height: 1; min-width: 3.4ch; text-align: right; }
+  .price.bump { animation: bump .4s cubic-bezier(.3,1.6,.5,1); }
+  .fine { font-size: .88rem; color: var(--muted); margin: 12px 0 0; }
+  .builder .btn { width: 100%; }
+  @media (min-width: 860px) {
+    .builder { grid-template-columns: .8fr 1.2fr; padding: 44px; gap: 44px; align-items: center; }
+    .treat { width: 100%; }
+  }
+
+  /* Animaciones internas del dibujo */
+  .cookie, .scoop, .bit { transform-box: fill-box; }
+  .cookie { transform-origin: 50% 60%; }
+  .scoop { transform-origin: 50% 100%; }
+  .bit { transform-origin: 50% 50%; }
+  .a-g .cookie { animation: wobble .65s ease; }
+  .a-h .scoop { animation: scoopDrop .7s var(--ease); }
+  .a-t .bit { animation: bit .55s cubic-bezier(.3,1.5,.5,1) calc(var(--i, 0) * 32ms) both; }
+  .intro .cookie { animation: cookieIn .8s var(--ease) .35s both; }
+  .intro .scoop { animation: scoopDrop .8s var(--ease) 1s both; }
+  .intro .bit { animation: bit .55s cubic-bezier(.3,1.5,.5,1) calc(1.5s + var(--i, 0) * 45ms) both; }
+
+  /* ---------- Clásicas ---------- */
+  .combo {
+    position: relative; isolation: isolate;
+    display: grid; grid-template-columns: auto 1fr; gap: 6px 20px; align-items: center;
+    padding: 22px 0; border-top: 2px solid var(--line);
+  }
+  .combo::before {
+    content: ""; position: absolute; inset: 0 -14px; z-index: -1; border-radius: 18px;
+    background: var(--panel); transform: scaleX(0); transform-origin: 0 50%;
+    transition: transform .45s var(--ease);
+  }
+  .combo:hover::before { transform: scaleX(1); }
+  .combo:last-of-type { border-bottom: 2px solid var(--line); }
+  .dots { display: flex; }
+  .dots i { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--bg); transition: margin .35s var(--ease), transform .35s var(--ease); }
+  .dots i + i { margin-left: -14px; }
+  .combo:hover .dots i + i { margin-left: 4px; }
+  .combo:hover .dots i:first-child { transform: rotate(-20deg); }
+  .combo h3 { font-family: var(--display); font-weight: 400; font-size: 2rem; margin: 0; line-height: 1; transition: transform .35s var(--ease); }
+  .combo:hover h3 { transform: translateX(8px); }
+  .combo p { margin: 0; color: var(--muted); grid-column: 1 / -1; }
+  .combo .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; grid-column: 1 / -1; margin-top: 8px; }
+  .combo .p { font-weight: 700; }
+  .link-btn {
+    font: 700 .95rem var(--body); color: var(--ink); background: none; cursor: pointer;
+    border: 2px solid var(--ink); border-radius: 999px; padding: .6em 1.1em;
+    transition: background-color .2s ease, color .2s ease, transform .2s var(--ease);
+  }
+  .link-btn:hover { background: var(--ink); color: var(--bg); transform: scale(1.06); }
+  @media (min-width: 720px) {
+    .combo { grid-template-columns: 110px 170px 1fr auto auto; gap: 20px; padding: 26px 0; }
+    .combo p { grid-column: auto; }
+    .combo .row { display: contents; }
+    .combo .p { font-size: 1.3rem; }
+  }
+
+  /* ---------- Cómo pedir ---------- */
+  .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 22px; counter-reset: s; }
+  .steps li { display: grid; grid-template-columns: 52px 1fr; gap: 16px; align-items: start; counter-increment: s; }
+  .steps li::before {
+    content: counter(s); width: 52px; height: 52px; border-radius: 50%;
+    display: grid; place-items: center; background: var(--orange); color: #3B2116;
+    font-family: var(--display); font-size: 1.5rem;
+    transition: transform .4s cubic-bezier(.3,1.6,.5,1);
+  }
+  .steps li:hover::before { transform: rotate(-12deg) scale(1.12); }
+  .steps b { display: block; font-size: 1.15rem; }
+  .steps span { color: var(--muted); }
+  @media (min-width: 860px) {
+    .steps { grid-template-columns: repeat(4, 1fr); gap: 28px; }
+    .steps li { grid-template-columns: 1fr; gap: 14px; }
+  }
+
+  /* ---------- Promos ---------- */
+  .promos { background: var(--panel); }
+  .promo-list { list-style: none; margin: 0; padding: 0; }
+  .promo-list li {
+    display: flex; gap: 16px; align-items: center; padding: 18px 0; border-top: 2px solid var(--line);
+    font-weight: 600; font-size: 1.12rem;
+  }
+  .promo-list li:last-child { border-bottom: 2px solid var(--line); }
+  .promo-list svg { width: 30px; height: 30px; flex: none; }
+  .js .promo-list path { stroke-dasharray: 30; stroke-dashoffset: 30; transition: stroke-dashoffset .6s var(--ease) calc(var(--d, 0s) + .35s); }
+  .promo-list li.in path { stroke-dashoffset: 0; }
+
+  /* ---------- Frases ---------- */
+  .quotes { background: var(--orange); color: #3B2116; overflow: hidden; }
+  .quotes h2 { margin-bottom: 8px; }
+  .q-grid { display: grid; gap: 22px; margin-top: 12px; }
+  .q-grid p { margin: 0; font-family: var(--display); font-size: clamp(1.5rem, 3.6vw, 2.1rem); line-height: 1.12; }
+  @media (min-width: 760px) { .q-grid { grid-template-columns: 1fr 1fr; gap: 34px 48px; } }
+
+  /* ---------- Cierre ---------- */
+  .closing { background: var(--choc); color: var(--cream); text-align: center; padding: 84px 0 calc(env(safe-area-inset-bottom, 0px) + 36px); overflow: hidden; }
+  .closing h2 { font-size: clamp(2.2rem, 6vw, 4rem); margin-bottom: 14px; }
+  .closing .squig { margin-inline: auto; }
+  .closing p { margin: 0 auto 28px; max-width: 40ch; color: #F0D9BC; }
+  .closing .num { font-weight: 700; letter-spacing: .04em; margin-top: 18px; color: var(--cream); }
+  .foot { margin-top: 64px; padding-top: 24px; border-top: 1px solid rgba(255,241,220,.18); font-size: .9rem; color: #D6BC9C; }
+  .foot .wordmark { font-size: 1.6rem; color: var(--cream); display: block; margin-bottom: 6px; }
+
+  /* ---------- Keyframes ---------- */
+  @keyframes rise { from { transform: translateY(110%); } to { transform: none; } }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+  @keyframes fadeDown { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: none; } }
+  @keyframes float { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-14px) rotate(1.6deg); } }
+  @keyframes drift { 0%, 100% { transform: translateY(0) rotate(var(--r)); } 50% { transform: translateY(-22px) rotate(calc(var(--r) + 50deg)); } }
+  @keyframes scroll { to { transform: translateX(-50%); } }
+  @keyframes spinOnce { from { transform: rotate(-360deg) scale(.3); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes ring { 0% { transform: scale(1); opacity: .8; } 100% { transform: scale(1.18, 1.7); opacity: 0; } }
+  @keyframes cookieIn { from { opacity: 0; transform: translateY(50px) scale(.8); } to { opacity: 1; transform: none; } }
+  @keyframes scoopDrop {
+    0% { transform: translateY(-80px); opacity: 0; }
+    55% { transform: translateY(0) scale(1.08, .88); opacity: 1; }
+    76% { transform: translateY(-6px) scale(.97, 1.05); }
+    100% { transform: none; opacity: 1; }
+  }
+  @keyframes wobble {
+    0% { transform: none; } 25% { transform: rotate(-5deg) scale(1.04); }
+    55% { transform: rotate(3deg) scale(.98); } 100% { transform: none; }
+  }
+  @keyframes bit { from { opacity: 0; transform: translateY(-34px) rotate(-40deg) scale(.4); } to { opacity: 1; transform: none; } }
+  @keyframes bump { 0% { transform: scale(1); } 40% { transform: scale(1.22) rotate(-3deg); } 100% { transform: none; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress" aria-hidden="true"></div>
+
+<!-- Símbolo de la O-galleta reutilizable -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="o-cookie" viewBox="0 0 100 100">
+    <path fill="#D9A566" fill-rule="evenodd" d="M50 4a46 46 0 1 0 0 92a46 46 0 1 0 0-92Z M50 31a19 19 0 1 1 0 38a19 19 0 1 1 0-38Z"/>
+    <g fill="#3B2116">
+      <circle cx="50" cy="15" r="4.2"/><circle cx="80" cy="30" r="3.6"/><circle cx="86" cy="58" r="4.2"/>
+      <circle cx="70" cy="83" r="3.6"/><circle cx="36" cy="86" r="4.2"/><circle cx="14" cy="60" r="3.6"/>
+      <circle cx="20" cy="28" r="4.2"/>
+    </g>
+  </symbol>
+</svg>
+
+<!-- Barra fija que aparece al bajar -->
+<div class="bar" id="bar" aria-hidden="true">
+  <div class="wrap bar-in">
+    <div class="wordmark" role="img" aria-label="ANTOJO">ANTOJ<svg aria-hidden="true"><use href="#o-cookie"/></svg></div>
+    <a class="btn btn-orange" data-wa="Hola ANTOJO, quiero hacer un pedido 🍪🍦" href="#" target="_blank" rel="noopener" tabindex="-1">Pedir por WhatsApp</a>
+  </div>
+</div>
+
+<header class="hero" id="hero">
+  <div class="sprinkles" id="sprinkles" aria-hidden="true"></div>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="wordmark" role="img" aria-label="ANTOJO">ANTOJ<svg aria-hidden="true"><use href="#o-cookie"/></svg></div>
+      <a class="btn btn-orange" data-wa="Hola ANTOJO, quiero hacer un pedido 🍪🍦" href="#" target="_blank" rel="noopener">Pedir por WhatsApp</a>
+    </div>
+
+    <div class="hero-grid">
+      <div>
+        <h1><span class="ln"><span>Tu antojo,</span></span><span class="ln"><span>tu <em>combinación.</em></span></span></h1>
+        <p class="lead">Galleta y helado, como tú quieras. Elige, combina y sobrevive al resto del día.</p>
+        <div class="hero-cta">
+          <a class="btn btn-orange" href="#arma">Arma tu antojo</a>
+          <a class="btn btn-line" href="#clasicas">Ver las clásicas</a>
+        </div>
+      </div>
+      <div class="hero-art" id="heroArt"><div class="float" id="heroFloat"></div></div>
+    </div>
+  </div>
+</header>
+
+<div class="marquee" aria-hidden="true"><div class="track" id="track"></div></div>
+
+<main>
+  <section id="arma">
+    <div class="wrap">
+      <h2 class="reveal">Arma tu antojo</h2>
+      <p class="sub reveal" style="--d:.1s">Elige tu galleta, tu helado y, si quieres, un topping. Abajo ves cómo te queda.</p>
+
+      <div class="builder reveal" style="--d:.15s">
+        <div class="builder-art">
+          <div class="treat" id="treat"></div>
+        </div>
+        <div>
+          <fieldset><legend>1. Tu galleta</legend><div class="chips" id="gChips"></div></fieldset>
+          <fieldset><legend>2. Tu helado</legend><div class="chips" id="hChips"></div></fieldset>
+          <fieldset><legend>3. Topping (opcional)</legend><div class="chips" id="tChips"></div></fieldset>
+
+          <div class="total">
+            <p class="summary" id="summary" aria-live="polite"></p>
+            <div class="price" id="price"></div>
+          </div>
+          <a class="btn btn-orange pulse" id="orderBtn" href="#" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.04 2a9.9 9.9 0 0 0-8.5 14.9L2 22l5.25-1.5A9.9 9.9 0 1 0 12.04 2Zm0 1.8a8.1 8.1 0 1 1-4.2 15l-.3-.18-3.1.88.9-3-.2-.32A8.1 8.1 0 0 1 12.04 3.8Zm-3.2 3.9c-.2 0-.5.07-.75.35-.25.27-1 1-1 2.4s1.03 2.8 1.18 3c.14.2 2 3.2 4.95 4.4 2.45.97 2.95.78 3.48.73.53-.05 1.7-.7 1.95-1.37.24-.68.24-1.26.17-1.38-.07-.12-.27-.2-.56-.35-.3-.14-1.7-.84-1.97-.94-.26-.1-.46-.14-.65.15-.2.3-.75.94-.92 1.13-.17.2-.34.22-.63.07-.3-.14-1.24-.46-2.36-1.46-.87-.78-1.46-1.74-1.63-2.03-.17-.3-.02-.46.13-.6.13-.13.3-.34.44-.5.15-.18.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.64-1.6-.9-2.18-.23-.5-.47-.5-.66-.5Z"/></svg>
+            Pedir por WhatsApp
+          </a>
+          <p class="fine">Precios referenciales: S/ 5 el clásico y S/ 8 con topping. Se abre WhatsApp con tu pedido ya escrito.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="clasicas" style="padding-top:0">
+    <div class="wrap">
+      <h2 class="reveal">Las clásicas</h2>
+      <p class="sub reveal" style="--d:.1s">¿No sabes qué elegir? Empieza por una de estas y cámbiale lo que quieras.</p>
+      <div id="combos"></div>
+    </div>
+  </section>
+
+  <section class="promos" id="promos">
+    <div class="wrap">
+      <h2 class="reveal">Promos para estudiantes</h2>
+      <p class="sub reveal" style="--d:.1s">Porque el presupuesto de la semana no da para todo.</p>
+      <ul class="promo-list">
+        <li class="reveal from-left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path pathLength="30" d="M4 12.5l5 5L20 6.5"/></svg>Combo estudiante: galleta + helado a precio especial</li>
+        <li class="reveal from-left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path pathLength="30" d="M4 12.5l5 5L20 6.5"/></svg>2x1 en fechas y campañas especiales</li>
+        <li class="reveal from-left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path pathLength="30" d="M4 12.5l5 5L20 6.5"/></svg>Descuento mostrando tu carnet universitario o estudiantil</li>
+        <li class="reveal from-left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path pathLength="30" d="M4 12.5l5 5L20 6.5"/></svg>Ven con tu amigo: descuento al comprar dos</li>
+        <li class="reveal from-left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path pathLength="30" d="M4 12.5l5 5L20 6.5"/></svg>Topping gratis en el lanzamiento</li>
+      </ul>
+      <p class="fine reveal">Las promos pueden cambiar según la fecha. Pregunta por WhatsApp cuál está activa.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2 class="reveal">Así se pide</h2>
+      <p class="sub reveal" style="--d:.1s">Cuatro pasos y listo.</p>
+      <ol class="steps">
+        <li class="reveal pop"><div><b>Elige tu galleta</b><span>Chocolate, con Oreo o de vainilla.</span></div></li>
+        <li class="reveal pop"><div><b>Elige tu helado</b><span>Vainilla, chocolate o fresa.</span></div></li>
+        <li class="reveal pop"><div><b>Súmale un topping</b><span>Chispas, trozos de Oreo o salsa de chocolate.</span></div></li>
+        <li class="reveal pop"><div><b>Escríbenos</b><span>Te llega en un empaque listo para comer o compartir.</span></div></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="quotes">
+    <div class="wrap">
+      <h2 class="reveal">¿Cuál es tu antojo?</h2>
+      <div class="q-grid">
+        <p class="reveal">Después de clases: te lo ganaste.</p>
+        <p class="reveal">Después del parcial: sobreviviste. Ahora disfruta.</p>
+        <p class="reveal">Con tus amigos: uno para ti, uno para mí.</p>
+        <p class="reveal">¿Chocolate o fresa? Tú eliges.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="closing">
+  <div class="wrap">
+    <h2 class="reveal">¿Ya sabes cuál es el tuyo?</h2>
+    <p class="reveal" style="--d:.1s">Escríbenos y te lo preparamos como lo imaginas.</p>
+    <a class="btn btn-orange pulse" data-wa="Hola ANTOJO, quiero hacer un pedido 🍪🍦" href="#" target="_blank" rel="noopener">Pedir por WhatsApp</a>
+    <div class="num">WhatsApp 977 745 357</div>
+    <div class="foot">
+      <div class="wordmark" role="img" aria-label="ANTOJO">ANTOJ<svg aria-hidden="true"><use href="#o-cookie"/></svg></div>
+      Tu antojo, tu combinación. Emprendimiento universitario.
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var WA = '51977745357';
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function waLink(msg) { return 'https://wa.me/' + WA + '?text=' + encodeURIComponent(msg); }
+
+  var G = {
+    choco:    { label: 'Galleta de chocolate', short: 'Chocolate', base: '#6B3E26', fleck: '#F3D9B1' },
+    oreo:     { label: 'Galleta con Oreo',     short: 'Con Oreo',  base: '#D9A566', fleck: '#2B1B14' },
+    vainilla: { label: 'Galleta de vainilla',  short: 'Vainilla',  base: '#EBC98A', fleck: '#C48A48' }
+  };
+  var H = {
+    vainilla: { label: 'helado de vainilla',  short: 'Vainilla',  c: '#FFE6A3' },
+    choco:    { label: 'helado de chocolate', short: 'Chocolate', c: '#7A4A32' },
+    fresa:    { label: 'helado de fresa',     short: 'Fresa',     c: '#FF9DB8' }
+  };
+  var T = {
+    none:    { label: '', short: 'Sin topping' },
+    chispas: { label: 'chispas de chocolate', short: 'Chispas de chocolate' },
+    oreo:    { label: 'trozos de Oreo', short: 'Trozos de Oreo' },
+    salsa:   { label: 'salsa de chocolate', short: 'Salsa de chocolate' }
+  };
+  var COMBOS = [
+    { name: 'CHOCO', g: 'choco', h: 'vainilla', d: 'Galleta de chocolate con helado de vainilla. La clásica.' },
+    { name: 'OREO',  g: 'oreo',  h: 'choco',    d: 'Galleta con Oreo y helado de chocolate. Para los que aman el chocolate.' },
+    { name: 'FRESA', g: 'vainilla', h: 'fresa', d: 'Galleta de vainilla con helado de fresa. Dulce y frutal.' }
+  ];
+
+  /* ---- Dibujo del antojo (SVG) ---- */
+  var FLECKS = [[50,190,10],[68,210,-20],[98,222,15],[132,224,-10],[162,214,20],[190,196,-15],[184,176,10],[62,172,-25],[112,204,30],[148,200,-30]];
+  var CHIPS  = [[100,62,20],[122,50,-30],[142,66,60],[88,86,-50],[112,78,10],[134,90,-20],[154,88,40],[104,104,70],[126,110,-60],[80,106,15],[146,108,-35],[120,66,80]];
+
+  function draw(g, h, t, cls) {
+    var G_ = G[g], H_ = H[h], s = '';
+    s += '<svg class="' + (cls || '') + '" viewBox="0 0 240 256" role="img" aria-label="' + G_.label + ' con ' + H_.label + (t !== 'none' ? ' y ' + T[t].label : '') + '">';
+    s += '<ellipse cx="120" cy="248" rx="92" ry="7" fill="rgba(0,0,0,.18)"/>';
+    s += '<g class="cookie">';
+    s += '<ellipse cx="120" cy="204" rx="96" ry="40" fill="' + G_.base + '"/>';
+    s += '<ellipse cx="120" cy="204" rx="96" ry="40" fill="rgba(0,0,0,.22)"/>';
+    s += '<ellipse cx="120" cy="192" rx="96" ry="40" fill="' + G_.base + '"/>';
+    s += '<ellipse cx="120" cy="192" rx="86" ry="33" fill="none" stroke="rgba(0,0,0,.14)" stroke-width="3" stroke-dasharray="6 8"/>';
+    FLECKS.forEach(function (f) {
+      s += '<ellipse cx="' + f[0] + '" cy="' + f[1] + '" rx="7" ry="4.5" fill="' + G_.fleck + '" transform="rotate(' + f[2] + ' ' + f[0] + ' ' + f[1] + ')"/>';
+    });
+    s += '</g><g class="scoop">';
+    s += '<circle cx="120" cy="100" r="58" fill="' + H_.c + '"/>';
+    s += '<ellipse cx="120" cy="142" rx="64" ry="18" fill="' + H_.c + '"/>';
+    s += '<rect x="78" y="138" width="18" height="34" rx="9" fill="' + H_.c + '"/>';
+    s += '<rect x="118" y="146" width="18" height="26" rx="9" fill="' + H_.c + '"/>';
+    s += '<rect x="150" y="140" width="18" height="36" rx="9" fill="' + H_.c + '"/>';
+    s += '<ellipse cx="96" cy="76" rx="15" ry="9" fill="#fff" opacity=".35" transform="rotate(-25 96 76)"/>';
+    s += '<g class="top">';
+    if (t === 'chispas') {
+      CHIPS.forEach(function (c, i) {
+        s += '<g class="bit" style="--i:' + i + '"><rect x="' + (c[0] - 6) + '" y="' + (c[1] - 2.3) + '" width="12" height="4.6" rx="2.3" fill="#3A2014" stroke="rgba(255,240,220,.75)" stroke-width=".9" transform="rotate(' + c[2] + ' ' + c[0] + ' ' + c[1] + ')"/></g>';
+      });
+    } else if (t === 'oreo') {
+      CHIPS.slice(0, 9).forEach(function (c, i) {
+        s += '<g class="bit" style="--i:' + i + '"><g transform="translate(' + c[0] + ' ' + c[1] + ') rotate(' + (c[2] * 2) + ') scale(' + (i % 2 ? 1 : 1.2) + ')">' +
+             '<path d="M0 -6 L6 -2 L4 5 L-4 6 L-7 0 Z" fill="#2B1B14" stroke="rgba(255,240,220,.7)" stroke-width=".9"/>' +
+             '<circle cx="1" cy="0" r="1.6" fill="#FFF1DC"/></g></g>';
+      });
+    } else if (t === 'salsa') {
+      var p = 'M78 82 Q92 104 108 82 T138 84 T162 88';
+      s += '<g class="bit" style="--i:0">';
+      s += '<path d="' + p + '" fill="none" stroke="rgba(255,240,220,.6)" stroke-width="10" stroke-linecap="round"/>';
+      s += '<path d="M100 92 V118 M142 88 V124" fill="none" stroke="rgba(255,240,220,.6)" stroke-width="10" stroke-linecap="round"/>';
+      s += '<path d="' + p + '" fill="none" stroke="#3A1E12" stroke-width="6.5" stroke-linecap="round"/>';
+      s += '<path d="M100 92 V118 M142 88 V124" fill="none" stroke="#3A1E12" stroke-width="6.5" stroke-linecap="round"/>';
+      s += '</g>';
+    }
+    s += '</g></g></svg>';
+    return s;
+  }
+
+  /* ---- Estado y UI ---- */
+  var state = { g: 'choco', h: 'vainilla', t: 'none' };
+  var treat = document.getElementById('treat');
+  var priceEl = document.getElementById('price');
+  var shownPrice = null;
+
+  function chips(container, name, data, key, withDot) {
+    var html = '';
+    Object.keys(data).forEach(function (k) {
+      var dot = withDot ? '<i style="background:' + (data[k].base || data[k].c) + '"></i>' : '';
+      html += '<label class="chip"><input type="radio" name="' + name + '" value="' + k + '"' + (state[key] === k ? ' checked' : '') + '>' +
+              '<span>' + dot + data[k].short + '</span></label>';
+    });
+    container.innerHTML = html;
+    container.addEventListener('change', function (e) {
+      if (e.target && e.target.name === name) { state[key] = e.target.value; render([key]); }
+    });
+  }
+
+  function setPrice(to) {
+    if (shownPrice === null || reduce) { priceEl.textContent = 'S/ ' + to; shownPrice = to; return; }
+    var from = shownPrice, start = null;
+    shownPrice = to;
+    priceEl.classList.remove('bump'); void priceEl.offsetWidth; priceEl.classList.add('bump');
+    function step(ts) {
+      if (start === null) start = ts;
+      var k = Math.min((ts - start) / 350, 1);
+      priceEl.textContent = 'S/ ' + Math.round(from + (to - from) * k);
+      if (k < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  function render(changed) {
+    var cls = (changed || []).map(function (k) { return 'a-' + k; }).join(' ');
+    treat.innerHTML = draw(state.g, state.h, state.t, reduce ? '' : cls);
+    var price = state.t === 'none' ? 5 : 8;
+    var parts = [G[state.g].label, H[state.h].label];
+    if (state.t !== 'none') parts.push(T[state.t].label);
+    document.getElementById('summary').textContent = parts.join(' + ');
+    setPrice(price);
+    document.getElementById('orderBtn').href = waLink(
+      'Hola ANTOJO 🍪🍦 Quiero mi antojo: ' + parts.join(' + ') + ' (S/ ' + price + '). ¿Me confirman?'
+    );
+  }
+
+  function syncRadios() {
+    ['galleta:g', 'helado:h', 'topping:t'].forEach(function (p) {
+      var n = p.split(':')[0], k = p.split(':')[1];
+      var el = document.querySelector('input[name="' + n + '"][value="' + state[k] + '"]');
+      if (el) el.checked = true;
+    });
+  }
+
+  chips(document.getElementById('gChips'), 'galleta', G, 'g', true);
+  chips(document.getElementById('hChips'), 'helado', H, 'h', true);
+  chips(document.getElementById('tChips'), 'topping', T, 't', false);
+  render(null);
+
+  // Hero: ilustración con animación de entrada
+  document.getElementById('heroFloat').innerHTML = draw('vainilla', 'fresa', 'chispas', reduce ? '' : 'intro');
+
+  // Clásicas
+  var combosEl = document.getElementById('combos');
+  combosEl.innerHTML = COMBOS.map(function (c, i) {
+    return '<div class="combo reveal from-left" style="--d:' + (i * 0.12) + 's">' +
+      '<div class="dots" aria-hidden="true"><i style="background:' + G[c.g].base + '"></i><i style="background:' + H[c.h].c + '"></i></div>' +
+      '<h3>' + c.name + '</h3>' +
+      '<p class="desc">' + c.d + '</p>' +
+      '<div class="row"><span class="p">S/ 5</span>' +
+      '<button type="button" class="link-btn" data-i="' + i + '">Elegir esta</button></div>' +
+      '</div>';
+  }).join('');
+  combosEl.addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-i]');
+    if (!b) return;
+    var c = COMBOS[+b.dataset.i];
+    state = { g: c.g, h: c.h, t: 'none' };
+    syncRadios(); render(['g', 'h']);
+    document.getElementById('arma').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' });
+  });
+
+  // Botones genéricos de WhatsApp
+  document.querySelectorAll('[data-wa]').forEach(function (a) { a.href = waLink(a.getAttribute('data-wa')); });
+
+  /* ---- Marquesina ---- */
+  (function () {
+    var words = ['TU ANTOJO', 'TU COMBINACIÓN', 'GALLETA + HELADO', 'ARMA EL TUYO', 'DESPUÉS DE CLASES'];
+    var one = '';
+    for (var r = 0; r < 2; r++) {
+      words.forEach(function (w) { one += '<b style="font-weight:400">' + w + '</b><svg aria-hidden="true"><use href="#o-cookie"/></svg>'; });
+    }
+    document.getElementById('track').innerHTML = '<span>' + one + '</span><span>' + one + '</span>';
+  })();
+
+  /* ---- Confeti flotante del hero ---- */
+  (function () {
+    var box = document.getElementById('sprinkles');
+    var colors = ['#FF9DB8', '#FFE6A3', '#FF7A1A', '#F3D9B1'];
+    var seed = 7;
+    function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+    var html = '';
+    for (var i = 0; i < 18; i++) {
+      var w = 10 + Math.round(rnd() * 8);
+      html += '<i style="left:' + Math.round(rnd() * 100) + '%;top:' + Math.round(rnd() * 100) + '%;width:' + w + 'px;height:' + Math.round(w / 2.6) +
+              'px;background:' + colors[i % colors.length] + ';--r:' + Math.round(rnd() * 180) + 'deg;--t:' + (5 + rnd() * 5).toFixed(1) + 's;--dl:-' + (rnd() * 8).toFixed(1) + 's"></i>';
+    }
+    box.innerHTML = html;
+  })();
+
+  /* ---- Títulos: subrayado ondulado + aparición al hacer scroll ---- */
+  document.querySelectorAll('h2').forEach(function (h) {
+    h.insertAdjacentHTML('afterend', '<svg class="squig" viewBox="0 0 120 12" aria-hidden="true"><path pathLength="1" d="M2 6 Q12 -1 22 6 T42 6 T62 6 T82 6 T102 6 T118 6"/></svg>');
+  });
+  // Escalonar hijos con .reveal dentro de listas
+  ['.promo-list li', '.steps li', '.q-grid p'].forEach(function (sel) {
+    document.querySelectorAll(sel).forEach(function (el, i) { el.style.setProperty('--d', (i * 0.11) + 's'); });
+  });
+
+  var items = document.querySelectorAll('.reveal');
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -6% 0px' });
+    items.forEach(function (el) { io.observe(el); });
+  } else {
+    items.forEach(function (el) { el.classList.add('in'); });
+  }
+
+  /* ---- Scroll: progreso, barra fija y parallax ---- */
+  var bar = document.getElementById('bar');
+  var progress = document.getElementById('progress');
+  var hero = document.getElementById('hero');
+  var art = document.getElementById('heroArt');
+  var ticking = false;
+
+  function onScroll() {
+    var y = window.pageYOffset || document.documentElement.scrollTop;
+    var max = document.documentElement.scrollHeight - window.innerHeight;
+    progress.style.transform = 'scaleX(' + (max > 0 ? Math.min(y / max, 1) : 0) + ')';
+    var show = y > hero.offsetHeight * 0.75;
+    if (bar.classList.contains('show') !== show) {
+      bar.classList.toggle('show', show);
+      bar.setAttribute('aria-hidden', show ? 'false' : 'true');
+      var l = bar.querySelector('a'); if (l) l.tabIndex = show ? 0 : -1;
+    }
+    if (!reduce && y < hero.offsetHeight) art.style.setProperty('--sy', (y * 0.12).toFixed(1) + 'px');
+    ticking = false;
+  }
+  window.addEventListener('scroll', function () {
+    if (!ticking) { ticking = true; requestAnimationFrame(onScroll); }
+  }, { passive: true });
+  window.addEventListener('resize', onScroll);
+  onScroll();
+
+  /* ---- Parallax con el mouse (solo escritorio) ---- */
+  if (!reduce && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    hero.addEventListener('pointermove', function (e) {
+      var r = hero.getBoundingClientRect();
+      var x = (e.clientX - r.left) / r.width - 0.5;
+      var y = (e.clientY - r.top) / r.height - 0.5;
+      art.style.setProperty('--px', (x * -28).toFixed(1) + 'px');
+      art.style.setProperty('--py', (y * -20).toFixed(1) + 'px');
+    });
+    hero.addEventListener('pointerleave', function () {
+      art.style.setProperty('--px', '0px'); art.style.setProperty('--py', '0px');
+    });
+  }
+})();
+</script>
+</body>
+</html>
